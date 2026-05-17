@@ -10,8 +10,12 @@ export const getAllNotes = async (req, res) => {
     filter.tag = tag;
   }
 
+  // 🔥 Регістронезалежний пошук по title та content
   if (search !== undefined) {
-    filter.$text = { $search: search };
+    filter.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { content: { $regex: search, $options: "i" } },
+    ];
   }
 
   const skip = (page - 1) * perPage;
