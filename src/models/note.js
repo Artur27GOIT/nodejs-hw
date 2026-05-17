@@ -25,3 +25,4 @@ const noteSchema = new Schema(
 );
 
 export const Note = model("Note", noteSchema);
+noteSchema.index({ title: "text", content: "text" });
