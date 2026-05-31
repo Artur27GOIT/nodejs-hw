@@ -12,8 +12,9 @@ import { Session } from "../models/session.js";
 import { createSession, setSessionCookies } from "../services/auth.js";
 import { sendEmail } from "../utils/sendMail.js";
 
-const { JWT_SECRET, FRONTEND_DOMAIN } = process.env;
+const { JWT_SECRET, FRONTEND_DOMAIN, SMTP_FROM } = process.env;
 
+// Шлях до шаблону листа
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const templatePath = path.join(__dirname, "..", "templates", "reset-password-email.html");
@@ -27,6 +28,9 @@ const getResetTemplate = async () => {
   return resetTemplate;
 };
 
+// -------------------------
+//     REGISTER USER
+// -------------------------
 export const registerUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -45,6 +49,9 @@ export const registerUser = async (req, res) => {
   res.status(201).json(user);
 };
 
+// -------------------------
+//        LOGIN USER
+// -------------------------
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -66,6 +73,9 @@ export const loginUser = async (req, res) => {
   res.status(200).json(user);
 };
 
+// -------------------------
+//   REFRESH USER SESSION
+// -------------------------
 export const refreshUserSession = async (req, res) => {
   const { sessionId, refreshToken } = req.cookies;
 
@@ -93,6 +103,9 @@ export const refreshUserSession = async (req, res) => {
   res.status(200).json({ message: "Session refreshed" });
 };
 
+// -------------------------
+//        LOGOUT USER
+// -------------------------
 export const logoutUser = async (req, res) => {
   const { sessionId } = req.cookies;
 
@@ -107,15 +120,20 @@ export const logoutUser = async (req, res) => {
   res.status(204).end();
 };
 
+// -------------------------
+//  REQUEST RESET EMAIL
+// -------------------------
 export const requestResetEmail = async (req, res) => {
   const { email } = req.body;
 
   const user = await User.findOne({ email });
 
+  // Якщо користувача немає — все одно повертаємо 200
   if (!user) {
     return res.status(200).json({ message: "Password reset email sent successfully" });
   }
 
+  // Генеруємо JWT токен на 15 хвилин
   const token = jwt.sign(
     {
       sub: user._id.toString(),
@@ -129,12 +147,14 @@ export const requestResetEmail = async (req, res) => {
 
   const template = await getResetTemplate();
   const html = template({
+    username: user.username, // ← ДОДАНО
     email: user.email,
     resetLink,
   });
 
   try {
     await sendEmail({
+      from: SMTP_FROM, // ← ДОДАНО
       to: user.email,
       subject: "Password reset",
       html,
@@ -146,6 +166,9 @@ export const requestResetEmail = async (req, res) => {
   res.status(200).json({ message: "Password reset email sent successfully" });
 };
 
+// -------------------------
+//       RESET PASSWORD
+// -------------------------
 export const resetPassword = async (req, res) => {
   const { token, password } = req.body;
 
