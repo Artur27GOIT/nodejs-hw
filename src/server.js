@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import { connectMongoDB } from "./db/connectMongoDB.js";
 import authRoutes from "./routes/authRoutes.js";
 import notesRoutes from "./routes/notesRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 import { logger } from "./middleware/logger.js";
 import { notFoundHandler } from "./middleware/notFoundHandler.js";
@@ -29,16 +30,16 @@ app.use(
 );
 
 app.use(express.json());
-
 app.use(cookieParser());
 
 app.use(authRoutes);
-
 app.use(notesRoutes);
+app.use(userRoutes);
+
+// 404
+app.use(notFoundHandler);
 
 app.use(errors());
-
-app.use(notFoundHandler);
 
 app.use(errorHandler);
 
